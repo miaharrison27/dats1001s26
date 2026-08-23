@@ -1,0 +1,13 @@
+---
+title: "About"
+image: profile.jpg
+about:
+  template: jolla
+  links:
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/miaeharrison/
+
+---
+Hi! I'm Mia Harrison, I am a Junior studying International Affairs and Economics and I am excited to show you my work. This is a summation of all of the work I did in my first Data Science class. You will see an introductory post, a post working with World Bank data, and I hypothesis testing. I hope to continue to grow my coding skills!
+

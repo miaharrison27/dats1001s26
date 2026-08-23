@@ -1,0 +1,193 @@
+---
+title: "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups"
+author: "Mia Harrison"
+date: "2026-04-23"
+categories: [Inference, Permutation Test, Adult Income Data]
+format:
+  html:
+    code-fold: true
+    toc: true
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+---
+## Introduction
+
+For this analysis, I use the Adult Income dataset, a census-based dataset containing demographic and employment information for individual adults. Each row in the dataset represents one person. I focus on whether average age differs between two workclass groups: individuals working in the private sector and individuals who are self-employed but not incorporated. The dataset used here contains more than 40,000 observations, and after filtering to these two workclass categories, the sample still includes a large number of individuals in both groups.
+
+## Data
+
+The dataset used in this analysis comes from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/adult)
+
+My research question is: **Do individuals working in the private sector differ in average age from individuals who are self-employed but not incorporated?**
+
+```{r}
+library(tidyverse)
+library(infer)
+df <- read_csv("train.csv")
+df_clean <- df %>%
+  filter(workclass %in% c("Private", "Self-emp-not-inc"))
+```
+
+
+## Exploratory Comparison
+
+Before conducting a formal hypothesis test, I first compare the age distributions of the two groups visually and numerically. The boxplot below shows the distribution of age for workers in the private sector and those who are self-employed but not incorporated.
+
+```{r}
+ggplot(df_clean, aes(x = workclass, y = age)) +
+  geom_boxplot() +
+  labs(
+    title = "Age Distribution by Workclass",
+    x = "Workclass",
+    y = "Age (years)"
+  )
+```
+
+The boxplot suggests that self-employed individuals tend to be older than those working in the private sector. The median age is clearly higher for the self-employed group, although there is still overlap between the two distributions. There are also several older outliers in both groups.
+
+To compare the group means directly, I calculate the mean age for each group below.
+
+```{r}
+group_means <- df_clean %>%
+  group_by(workclass) %>%
+  summarize(
+    mean_age = mean(age),
+    n = n()
+  )
+
+group_means
+```
+
+The average age in the private sector is lower than the average age among self-employed individuals. This suggests a noticeable difference, but a hypothesis test is needed to determine whether that difference is statistically significant.
+
+## Bootstrap Confidence Intervals
+
+To better understand the uncertainty around each group mean, I construct separate bootstrap confidence intervals for the mean age of each group.
+
+```{r}
+private_boot <- df_clean %>%
+  filter(workclass == "Private") %>%
+  specify(response = age) %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+self_boot <- df_clean %>%
+  filter(workclass == "Self-emp-not-inc") %>%
+  specify(response = age) %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+```
+
+```{r}
+private_ci <- quantile(private_boot$stat, c(0.025, 0.975))
+self_ci <- quantile(self_boot$stat, c(0.025, 0.975))
+
+ci_summary <- tibble(
+  workclass = c("Private", "Self-emp-not-inc"),
+  mean_age = c(
+    mean(df_clean$age[df_clean$workclass == "Private"]),
+    mean(df_clean$age[df_clean$workclass == "Self-emp-not-inc"])
+  ),
+  lower = c(private_ci[1], self_ci[1]),
+  upper = c(private_ci[2], self_ci[2])
+)
+
+ci_summary
+```
+
+The table above gives the observed mean age for each group along with the lower and upper bounds of the 95% bootstrap confidence interval.
+
+```{r}
+ggplot(ci_summary, aes(x = workclass, y = mean_age)) +
+  geom_col() +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +
+  labs(
+    title = "Bootstrap Confidence Intervals for Mean Age",
+    x = "Workclass",
+    y = "Mean Age",
+    caption = "Source: Adult Income Dataset"
+  )
+```
+
+The confidence intervals provide a visual summary of uncertainty around each mean. In this case, the intervals show that the self-employed group has a higher average age than the private-sector group. If the intervals do not overlap much, that is a strong visual clue that the groups differ.
+
+## Hypotheses
+
+To formally test whether mean age differs between the two groups, I use a permutation test.
+
+Let group 1 be **Private** and group 2 be **Self-emp-not-inc**.
+
+The null hypothesis is:
+
+H0:μPrivate−μSelf-emp-not-inc=0H0​:μPrivate​−μSelf-emp-not-inc​=0
+
+This means that the average age is the same in both groups.
+
+The alternative hypothesis is:
+
+HA:μPrivate−μSelf-emp-not-inc≠0HA​:μPrivate​−μSelf-emp-not-inc​=0
+
+This is a two-sided alternative because I want to test whether the two groups differ, without assuming in advance which one must be older.
+
+## Null Distribution and P-value
+
+To test the null hypothesis, I generate a null distribution by permuting workclass labels and recalculating the difference in mean age many times.
+
+
+```{r}
+null_dist <- df_clean %>%
+  specify(response = age, explanatory = workclass) %>%
+  hypothesize(null = "independence") %>%
+  generate(reps = 1000, type = "permute") %>%
+  calculate(stat = "diff in means", order = c("Private", "Self-emp-not-inc"))
+
+obs_stat <- df_clean %>%
+  specify(response = age, explanatory = workclass) %>%
+  calculate(stat = "diff in means", order = c("Private", "Self-emp-not-inc"))
+
+obs_stat
+```
+
+The observed statistic above is the difference in mean age between the private-sector group and the self-employed group. Because the order is `Private - Self-emp-not-inc`, a negative value means that private-sector workers are younger on average.
+
+```{r}
+p_value <- get_p_value(null_dist, obs_stat = obs_stat, direction = "two-sided")
+p_value
+```
+
+The p-value is essentially 0, which means that none of the 1,000 simulated differences under the null hypothesis were as extreme as the observed difference. In practice, this should be interpreted as **p \< 0.001**, not as a literal probability of zero.
+
+## Visualizing the P-value
+
+The plot below shows the null distribution of differences in mean age under the assumption that workclass and age are unrelated. The shaded region highlights simulated values at least as extreme as the observed difference.
+
+```{r}
+visualize(null_dist) +
+  shade_p_value(obs_stat = obs_stat, direction = "two-sided") +
+  labs(
+    title = "Null Distribution of the Difference in Mean Age",
+    x = "Difference in Means",
+    y = "Count",
+    caption = "Source: Adult Income Dataset"
+  )
+```
+
+The null distribution is centered near 0, which is what we would expect if the two groups truly had the same average age. The observed difference falls far from the center of this distribution, and the shaded area is extremely small. This indicates that the observed difference would be very unlikely if the null hypothesis were true.
+
+## Decision
+
+For this analysis, I use a significance level of α=0.05, which is a standard threshold in statistical testing.
+
+Because the p-value is far below 0.05, I reject the null hypothesis. There is strong statistical evidence that average age differs between individuals working in the private sector and those who are self-employed but not incorporated.
+
+## Practical Significance
+
+Statistical significance does not automatically mean the difference is important in practice, so it is useful to consider the size of the effect. In this dataset, the average age for private-sector workers is about 36.9 years, while the average age for self-employed workers is about 45.4 years. This is a difference of roughly 8.5 years, which is substantial in real-world terms.
+
+This difference may reflect differences in career paths. Self-employment may be more common among older adults who have accumulated more work experience, resources, or professional independence over time. That means age differences between these groups may not be caused by workclass itself, but instead may reflect broader life-cycle and labor-market patterns.
+
+## Conclusion
+
+In this post, I examined whether average age differs between private-sector workers and self-employed workers in the Adult Income dataset. The exploratory boxplot, the group means, the bootstrap confidence intervals, and the permutation test all point to the same conclusion: self-employed individuals in this sample are older on average than private-sector workers. The p-value was extremely small, providing strong evidence against the null hypothesis of no difference. The observed gap of about 8.5 years is also practically meaningful, although the comparison should be interpreted carefully because these groups may differ in other ways beyond workclass alone.

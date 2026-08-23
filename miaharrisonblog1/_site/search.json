@@ -1,0 +1,170 @@
+[
+  {
+    "objectID": "blog.html",
+    "href": "blog.html",
+    "title": "Blog Posts",
+    "section": "",
+    "text": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups\n\n\n\n\n\n\nMia Harrison\n\n\nApr 23, 2026\n\n\n\n\n\n\n\n\n\n\n\nPost 2: Exploratory Data Analysis: Global Population\n\n\n\n\n\n\nMia Harrison\n\n\nApr 20, 2026\n\n\n\n\n\n\n\n\n\n\n\nPost 1: Introductory Post and Reflection\n\n\n\n\n\n\nMia Harrison\n\n\nJan 22, 2026\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/post3/index.html",
+    "href": "posts/post3/index.html",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "",
+    "text": "For this analysis, I use the Adult Income dataset, a census-based dataset containing demographic and employment information for individual adults. Each row in the dataset represents one person. I focus on whether average age differs between two workclass groups: individuals working in the private sector and individuals who are self-employed but not incorporated. The dataset used here contains more than 40,000 observations, and after filtering to these two workclass categories, the sample still includes a large number of individuals in both groups."
+  },
+  {
+    "objectID": "posts/post3/index.html#introduction",
+    "href": "posts/post3/index.html#introduction",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "",
+    "text": "For this analysis, I use the Adult Income dataset, a census-based dataset containing demographic and employment information for individual adults. Each row in the dataset represents one person. I focus on whether average age differs between two workclass groups: individuals working in the private sector and individuals who are self-employed but not incorporated. The dataset used here contains more than 40,000 observations, and after filtering to these two workclass categories, the sample still includes a large number of individuals in both groups."
+  },
+  {
+    "objectID": "posts/post3/index.html#data",
+    "href": "posts/post3/index.html#data",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "Data",
+    "text": "Data\nThe dataset used in this analysis comes from the UCI Machine Learning Repository\nMy research question is: Do individuals working in the private sector differ in average age from individuals who are self-employed but not incorporated?\n\n\nCode\nlibrary(tidyverse)\nlibrary(infer)\ndf &lt;- read_csv(\"train.csv\")\ndf_clean &lt;- df %&gt;%\n  filter(workclass %in% c(\"Private\", \"Self-emp-not-inc\"))"
+  },
+  {
+    "objectID": "posts/post3/index.html#exploratory-comparison",
+    "href": "posts/post3/index.html#exploratory-comparison",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "Exploratory Comparison",
+    "text": "Exploratory Comparison\nBefore conducting a formal hypothesis test, I first compare the age distributions of the two groups visually and numerically. The boxplot below shows the distribution of age for workers in the private sector and those who are self-employed but not incorporated.\n\n\nCode\nggplot(df_clean, aes(x = workclass, y = age)) +\n  geom_boxplot() +\n  labs(\n    title = \"Age Distribution by Workclass\",\n    x = \"Workclass\",\n    y = \"Age (years)\"\n  )\n\n\n\n\n\n\n\n\n\nThe boxplot suggests that self-employed individuals tend to be older than those working in the private sector. The median age is clearly higher for the self-employed group, although there is still overlap between the two distributions. There are also several older outliers in both groups.\nTo compare the group means directly, I calculate the mean age for each group below.\n\n\nCode\ngroup_means &lt;- df_clean %&gt;%\n  group_by(workclass) %&gt;%\n  summarize(\n    mean_age = mean(age),\n    n = n()\n  )\n\ngroup_means\n\n\n# A tibble: 2 × 3\n  workclass        mean_age     n\n  &lt;chr&gt;               &lt;dbl&gt; &lt;int&gt;\n1 Private              36.9 30587\n2 Self-emp-not-inc     45.4  3464\n\n\nThe average age in the private sector is lower than the average age among self-employed individuals. This suggests a noticeable difference, but a hypothesis test is needed to determine whether that difference is statistically significant."
+  },
+  {
+    "objectID": "posts/post3/index.html#bootstrap-confidence-intervals",
+    "href": "posts/post3/index.html#bootstrap-confidence-intervals",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "Bootstrap Confidence Intervals",
+    "text": "Bootstrap Confidence Intervals\nTo better understand the uncertainty around each group mean, I construct separate bootstrap confidence intervals for the mean age of each group.\n\n\nCode\nprivate_boot &lt;- df_clean %&gt;%\n  filter(workclass == \"Private\") %&gt;%\n  specify(response = age) %&gt;%\n  generate(reps = 1000, type = \"bootstrap\") %&gt;%\n  calculate(stat = \"mean\")\n\nself_boot &lt;- df_clean %&gt;%\n  filter(workclass == \"Self-emp-not-inc\") %&gt;%\n  specify(response = age) %&gt;%\n  generate(reps = 1000, type = \"bootstrap\") %&gt;%\n  calculate(stat = \"mean\")\n\n\n\n\nCode\nprivate_ci &lt;- quantile(private_boot$stat, c(0.025, 0.975))\nself_ci &lt;- quantile(self_boot$stat, c(0.025, 0.975))\n\nci_summary &lt;- tibble(\n  workclass = c(\"Private\", \"Self-emp-not-inc\"),\n  mean_age = c(\n    mean(df_clean$age[df_clean$workclass == \"Private\"]),\n    mean(df_clean$age[df_clean$workclass == \"Self-emp-not-inc\"])\n  ),\n  lower = c(private_ci[1], self_ci[1]),\n  upper = c(private_ci[2], self_ci[2])\n)\n\nci_summary\n\n\n# A tibble: 2 × 4\n  workclass        mean_age lower upper\n  &lt;chr&gt;               &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;\n1 Private              36.9  36.7  37.0\n2 Self-emp-not-inc     45.4  44.9  45.9\n\n\nThe table above gives the observed mean age for each group along with the lower and upper bounds of the 95% bootstrap confidence interval.\n\n\nCode\nggplot(ci_summary, aes(x = workclass, y = mean_age)) +\n  geom_col() +\n  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +\n  labs(\n    title = \"Bootstrap Confidence Intervals for Mean Age\",\n    x = \"Workclass\",\n    y = \"Mean Age\",\n    caption = \"Source: Adult Income Dataset\"\n  )\n\n\n\n\n\n\n\n\n\nThe confidence intervals provide a visual summary of uncertainty around each mean. In this case, the intervals show that the self-employed group has a higher average age than the private-sector group. If the intervals do not overlap much, that is a strong visual clue that the groups differ."
+  },
+  {
+    "objectID": "posts/post3/index.html#hypotheses",
+    "href": "posts/post3/index.html#hypotheses",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "Hypotheses",
+    "text": "Hypotheses\nTo formally test whether mean age differs between the two groups, I use a permutation test.\nLet group 1 be Private and group 2 be Self-emp-not-inc.\nThe null hypothesis is:\nH0:μPrivate−μSelf-emp-not-inc=0H0​:μPrivate​−μSelf-emp-not-inc​=0\nThis means that the average age is the same in both groups.\nThe alternative hypothesis is:\nHA:μPrivate−μSelf-emp-not-inc≠0HA​:μPrivate​−μSelf-emp-not-inc​=0\nThis is a two-sided alternative because I want to test whether the two groups differ, without assuming in advance which one must be older."
+  },
+  {
+    "objectID": "posts/post3/index.html#null-distribution-and-p-value",
+    "href": "posts/post3/index.html#null-distribution-and-p-value",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "Null Distribution and P-value",
+    "text": "Null Distribution and P-value\nTo test the null hypothesis, I generate a null distribution by permuting workclass labels and recalculating the difference in mean age many times.\n\n\nCode\nnull_dist &lt;- df_clean %&gt;%\n  specify(response = age, explanatory = workclass) %&gt;%\n  hypothesize(null = \"independence\") %&gt;%\n  generate(reps = 1000, type = \"permute\") %&gt;%\n  calculate(stat = \"diff in means\", order = c(\"Private\", \"Self-emp-not-inc\"))\n\nobs_stat &lt;- df_clean %&gt;%\n  specify(response = age, explanatory = workclass) %&gt;%\n  calculate(stat = \"diff in means\", order = c(\"Private\", \"Self-emp-not-inc\"))\n\nobs_stat\n\n\nResponse: age (numeric)\nExplanatory: workclass (factor)\n# A tibble: 1 × 1\n   stat\n  &lt;dbl&gt;\n1 -8.54\n\n\nThe observed statistic above is the difference in mean age between the private-sector group and the self-employed group. Because the order is Private - Self-emp-not-inc, a negative value means that private-sector workers are younger on average.\n\n\nCode\np_value &lt;- get_p_value(null_dist, obs_stat = obs_stat, direction = \"two-sided\")\np_value\n\n\n# A tibble: 1 × 1\n  p_value\n    &lt;dbl&gt;\n1       0\n\n\nThe p-value is essentially 0, which means that none of the 1,000 simulated differences under the null hypothesis were as extreme as the observed difference. In practice, this should be interpreted as p &lt; 0.001, not as a literal probability of zero."
+  },
+  {
+    "objectID": "posts/post3/index.html#visualizing-the-p-value",
+    "href": "posts/post3/index.html#visualizing-the-p-value",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "Visualizing the P-value",
+    "text": "Visualizing the P-value\nThe plot below shows the null distribution of differences in mean age under the assumption that workclass and age are unrelated. The shaded region highlights simulated values at least as extreme as the observed difference.\n\n\nCode\nvisualize(null_dist) +\n  shade_p_value(obs_stat = obs_stat, direction = \"two-sided\") +\n  labs(\n    title = \"Null Distribution of the Difference in Mean Age\",\n    x = \"Difference in Means\",\n    y = \"Count\",\n    caption = \"Source: Adult Income Dataset\"\n  )\n\n\n\n\n\n\n\n\n\nThe null distribution is centered near 0, which is what we would expect if the two groups truly had the same average age. The observed difference falls far from the center of this distribution, and the shaded area is extremely small. This indicates that the observed difference would be very unlikely if the null hypothesis were true."
+  },
+  {
+    "objectID": "posts/post3/index.html#decision",
+    "href": "posts/post3/index.html#decision",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "Decision",
+    "text": "Decision\nFor this analysis, I use a significance level of α=0.05, which is a standard threshold in statistical testing.\nBecause the p-value is far below 0.05, I reject the null hypothesis. There is strong statistical evidence that average age differs between individuals working in the private sector and those who are self-employed but not incorporated."
+  },
+  {
+    "objectID": "posts/post3/index.html#practical-significance",
+    "href": "posts/post3/index.html#practical-significance",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "Practical Significance",
+    "text": "Practical Significance\nStatistical significance does not automatically mean the difference is important in practice, so it is useful to consider the size of the effect. In this dataset, the average age for private-sector workers is about 36.9 years, while the average age for self-employed workers is about 45.4 years. This is a difference of roughly 8.5 years, which is substantial in real-world terms.\nThis difference may reflect differences in career paths. Self-employment may be more common among older adults who have accumulated more work experience, resources, or professional independence over time. That means age differences between these groups may not be caused by workclass itself, but instead may reflect broader life-cycle and labor-market patterns."
+  },
+  {
+    "objectID": "posts/post3/index.html#conclusion",
+    "href": "posts/post3/index.html#conclusion",
+    "title": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups",
+    "section": "Conclusion",
+    "text": "Conclusion\nIn this post, I examined whether average age differs between private-sector workers and self-employed workers in the Adult Income dataset. The exploratory boxplot, the group means, the bootstrap confidence intervals, and the permutation test all point to the same conclusion: self-employed individuals in this sample are older on average than private-sector workers. The p-value was extremely small, providing strong evidence against the null hypothesis of no difference. The observed gap of about 8.5 years is also practically meaningful, although the comparison should be interpreted carefully because these groups may differ in other ways beyond workclass alone."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "DATS 1001",
+    "section": "",
+    "text": "Post 3: Hypothesis Test Comparing Mean Age Across Workclass Groups\n\n\n\n\n\n\n\n\nApr 23, 2026\n\n\nMia Harrison\n\n\n\n\n\n\n\n\n\n\n\n\nPost 2: Exploratory Data Analysis: Global Population\n\n\n\n\n\n\n\n\nApr 20, 2026\n\n\nMia Harrison\n\n\n\n\n\n\n\n\n\n\n\n\nPost 1: Introductory Post and Reflection\n\n\n\n\n\n\n\n\nJan 22, 2026\n\n\nMia Harrison\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "Hi! I’m Mia Harrison, I am a Junior studying International Affairs and Economics and I am excited to show you my work. This is a summation of all of the work I did in my first Data Science class. You will see an introductory post, a post working with World Bank data, and I hypothesis testing. I hope to continue to grow my coding skills!"
+  },
+  {
+    "objectID": "posts/post1/index.html",
+    "href": "posts/post1/index.html",
+    "title": "Post 1: Introductory Post and Reflection",
+    "section": "",
+    "text": "Hi! My name is Mia and I am super excited to be taking this class! I am incredibly fascinated by the intersection of diplomacy and technology, as I see the next wave of global issues and conflict to be driven by byproducts of STEM. I think it is important for peacemakers to be able to accurately communicate with analysts and have some semblance of coding/biology/ecology, as climate change, artificial intelligence, and energy press as major global issues of today. That is why I am taking this course.\nUpon reflection, I have learned SO MUCH in this class. I am so grateful to have had experience in RStudio so that these platforms are not foreign to me. I have already been able to help my peers just simply because I understand that you need to install.packages the first time you use soemthign new! Coding can be really intimidating, and I am glad I took this class and asked the dumb questions. Even though my grade is lower than I would want, I know I will use this information for years to come. Especially in my reserach fellowship this summer! Here is a link if you’re interested NextGenPop Research Scholars\nAlso I would like to note I did attend tutoring on Monday, May 4th with Caroline K to recieve some extra help and get another set of eyes on my blog. We tried to go through feedback I recieved on my graded blogs and organize files. Just wanted to let you know!\nHere is some bold test and some italic text.\n\n\n\nOne thing I’m learning\n\nHow to make this blog post\n\nAnother thing I’m practicing\n\nUsing a new coding language\n\nOne goal I have for this course\n\nTo make a blog post that I am truly proud of that I can show off in other disciplines of study.\n\n\n\n\n\n\nSet up my Quarto website\nAdd my first post\nKeep posting each week\n\nHere’s a link to a website I use: Quarto documentation\nHere’s an image:\n\nHere is some inline code: index.qmd\nAnd here is an R code block:\n\nx &lt;- 1:5\nmean(x)\n\n[1] 3"
+  },
+  {
+    "objectID": "posts/post1/index.html#a-little-about-this-blog",
+    "href": "posts/post1/index.html#a-little-about-this-blog",
+    "title": "Post 1: Introductory Post and Reflection",
+    "section": "",
+    "text": "Hi! My name is Mia and I am super excited to be taking this class! I am incredibly fascinated by the intersection of diplomacy and technology, as I see the next wave of global issues and conflict to be driven by byproducts of STEM. I think it is important for peacemakers to be able to accurately communicate with analysts and have some semblance of coding/biology/ecology, as climate change, artificial intelligence, and energy press as major global issues of today. That is why I am taking this course.\nUpon reflection, I have learned SO MUCH in this class. I am so grateful to have had experience in RStudio so that these platforms are not foreign to me. I have already been able to help my peers just simply because I understand that you need to install.packages the first time you use soemthign new! Coding can be really intimidating, and I am glad I took this class and asked the dumb questions. Even though my grade is lower than I would want, I know I will use this information for years to come. Especially in my reserach fellowship this summer! Here is a link if you’re interested NextGenPop Research Scholars\nAlso I would like to note I did attend tutoring on Monday, May 4th with Caroline K to recieve some extra help and get another set of eyes on my blog. We tried to go through feedback I recieved on my graded blogs and organize files. Just wanted to let you know!\nHere is some bold test and some italic text.\n\n\n\nOne thing I’m learning\n\nHow to make this blog post\n\nAnother thing I’m practicing\n\nUsing a new coding language\n\nOne goal I have for this course\n\nTo make a blog post that I am truly proud of that I can show off in other disciplines of study.\n\n\n\n\n\n\nSet up my Quarto website\nAdd my first post\nKeep posting each week\n\nHere’s a link to a website I use: Quarto documentation\nHere’s an image:\n\nHere is some inline code: index.qmd\nAnd here is an R code block:\n\nx &lt;- 1:5\nmean(x)\n\n[1] 3"
+  },
+  {
+    "objectID": "posts/post2/index.html",
+    "href": "posts/post2/index.html",
+    "title": "Post 2: Exploratory Data Analysis: Global Population",
+    "section": "",
+    "text": "This dataset comes from the World Bank and contains information on country populations. Each observation represents a country in a given year, and for this analysis I focus on data from 2022 to examine how population is distributed globally.\nThe data was accessed using the World Bank database through the WDI R package, which retrieves data directly from the World Bank API.\nI am particularly interested in population as a foundational variable in my broader research on the gendered impacts of economic sanctions. Population size and distribution shape how sanctions affect different groups, including access to resources, labor markets, and social services. Understanding global population patterns provides important context for analyzing how economic and political pressures may be experienced differently across countries.\nThe data was accessed using the World Bank database through the WDI R package."
+  },
+  {
+    "objectID": "posts/post2/index.html#introduction",
+    "href": "posts/post2/index.html#introduction",
+    "title": "Post 2: Exploratory Data Analysis: Global Population",
+    "section": "",
+    "text": "This dataset comes from the World Bank and contains information on country populations. Each observation represents a country in a given year, and for this analysis I focus on data from 2022 to examine how population is distributed globally.\nThe data was accessed using the World Bank database through the WDI R package, which retrieves data directly from the World Bank API.\nI am particularly interested in population as a foundational variable in my broader research on the gendered impacts of economic sanctions. Population size and distribution shape how sanctions affect different groups, including access to resources, labor markets, and social services. Understanding global population patterns provides important context for analyzing how economic and political pressures may be experienced differently across countries.\nThe data was accessed using the World Bank database through the WDI R package."
+  },
+  {
+    "objectID": "posts/post2/index.html#variables",
+    "href": "posts/post2/index.html#variables",
+    "title": "Post 2: Exploratory Data Analysis: Global Population",
+    "section": "Variables",
+    "text": "Variables\nThe main variables used in this analysis are described below.\n\n\n\n\n\n\n\n\nVariable\nType\nDescription\n\n\n\n\ncountry\nCategorical\nName of the country\n\n\nyear\nContinuous\nYear of observation\n\n\npopulation\nContinuous\nTotal population of the country\n\n\nregion\nCategorical\nWorld Bank region classification\n\n\nincome\nCategorical\nWorld Bank income classification\n\n\npop_group\nCategorical\nPopulation size group created for analysis"
+  },
+  {
+    "objectID": "posts/post2/index.html#data-cleaning",
+    "href": "posts/post2/index.html#data-cleaning",
+    "title": "Post 2: Exploratory Data Analysis: Global Population",
+    "section": "Data Cleaning",
+    "text": "Data Cleaning\n\nlibrary(WDI)\nlibrary(tidyverse)\n\n\npop_data &lt;- WDI(\n  country = \"all\",\n  indicator = \"SP.POP.TOTL\",\n  start = 2010,\n  end = 2022,\n  extra = TRUE\n)\n\n\npop_clean &lt;- pop_data %&gt;%\n  filter(region != \"Aggregates\") %&gt;%\n  drop_na(SP.POP.TOTL) %&gt;%\n  rename(population = SP.POP.TOTL)\n\n\npop_2022 &lt;- pop_clean %&gt;%\n  filter(year == 2022) %&gt;%\n  mutate(\n    pop_group = case_when(\n      population &lt; 10000000 ~ \"Small\",\n      population &lt; 100000000 ~ \"Medium\",\n      TRUE ~ \"Large\"\n    )\n  )\n\nThe dataset required several cleaning steps before analysis. First, I removed aggregate observations such as “World” and regional totals so that each row represented an individual country. I then removed missing values for population and renamed the population variable to make it easier to use in plots and discussion. Finally, I filtered the data to include only observations from 2022 and created a categorical variable called pop_group to classify countries as small, medium, or large by population size."
+  },
+  {
+    "objectID": "posts/post2/index.html#population-distribution",
+    "href": "posts/post2/index.html#population-distribution",
+    "title": "Post 2: Exploratory Data Analysis: Global Population",
+    "section": "Population Distribution",
+    "text": "Population Distribution\n\nggplot(pop_2022, aes(x = population)) +\n  geom_histogram(binwidth = 50000000) +\n  labs(\n    title = \"Distribution of Country Populations (2022)\",\n    x = \"Population\",\n    y = \"Number of Countries\",\n    caption = \"Source: World Bank\"\n  )\n\n\n\n\n\n\n\n\nThe distribution of population is highly right-skewed, with most countries having relatively small populations and a few countries having extremely large populations. This means the population distribution is very uneven across countries."
+  },
+  {
+    "objectID": "posts/post2/index.html#population-groups",
+    "href": "posts/post2/index.html#population-groups",
+    "title": "Post 2: Exploratory Data Analysis: Global Population",
+    "section": "Population Groups",
+    "text": "Population Groups\n\nggplot(pop_2022, aes(x = pop_group)) +\n  geom_bar() +\n  labs(\n    title = \"Number of Countries by Population Group\",\n    x = \"Population Group\",\n    y = \"Count\",\n    caption = \"Source: World Bank\"\n  )\n\n\n\n\n\n\n\n\nMost countries fall into the small population category, while relatively few countries are classified as large. This reinforces the histogram by showing that very large populations are uncommon."
+  },
+  {
+    "objectID": "posts/post2/index.html#comparing-population-by-income-group",
+    "href": "posts/post2/index.html#comparing-population-by-income-group",
+    "title": "Post 2: Exploratory Data Analysis: Global Population",
+    "section": "Comparing Population by Income Group",
+    "text": "Comparing Population by Income Group\n\nggplot(pop_2022, aes(x = income, y = population)) +\n  geom_boxplot() +\n  labs(\n    title = \"Population by Income Group\",\n    x = \"Income Group\",\n    y = \"Population\",\n    caption = \"Source: World Bank\"\n  ) +\n  theme(axis.text.x = element_text(angle = 45, hjust = 1))\n\n\n\n\n\n\n\n\nThis boxplot shows that population varies substantially within each income group. Some groups contain countries with much larger populations than others, and there are several outliers, showing that population size differs widely even among countries in the same income category."
+  },
+  {
+    "objectID": "posts/post2/index.html#conclusion",
+    "href": "posts/post2/index.html#conclusion",
+    "title": "Post 2: Exploratory Data Analysis: Global Population",
+    "section": "Conclusion",
+    "text": "Conclusion\nThis exploratory analysis shows that country populations in 2022 are distributed very unevenly across the world, with most countries having relatively small populations and a small number of countries accounting for a large share of the global total. These differences highlight how structural characteristics, such as population size, vary widely across national contexts.\nThis variation is especially relevant to my broader research on the gendered impacts of economic sanctions. Population size and distribution may shape how sanctions are implemented and experienced, influencing factors such as labor markets, access to resources, and the capacity of social services. For example, in comparative cases such as the Democratic Republic of the Congo and Afghanistan, differences in population size and structure may interact with political and economic conditions to produce different policy outcomes.\nIn future work, I am interested in examining whether characteristics like population and gender-related indicators are associated with different types of sanctions regimes, such as comprehensive versus targeted sanctions. This would help to better understand whether and how structural country-level variables influence not only the effects of sanctions, but also how they are designed and applied."
+  }
+]

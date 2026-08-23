@@ -1,0 +1,15 @@
+{
+  "hash": "2d53e3ace26c1c9d059a52358b2e19c5",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Post 1: Introductory Post and Reflection\"\nauthor: Mia Harrison\ndate: \"2026-01-22\"\ncategories: [Introduction, Quarto, Reflection]\nformat: html\n---\n# Welcome to my first post\n\n## A little about this blog\n\nHi! My name is Mia and I am super excited to be taking this class! I am incredibly fascinated by the intersection of diplomacy and technology, as I see the next wave of global issues and conflict to be driven by byproducts of STEM. I think it is important for peacemakers to be able to accurately communicate with analysts and have some semblance of coding/biology/ecology, as climate change, artificial intelligence, and energy press as major global issues of today. That is why I am taking this course. \n\nUpon reflection, I have learned SO MUCH in this class. I am so grateful to have had experience in RStudio so that these platforms are not foreign to me. I have already been able to help my peers just simply because I understand that you need to install.packages the first time you use soemthign new! Coding can be really intimidating, and I am glad I took this class and asked the dumb questions. Even though my grade is lower than I would want, I know I will use this information for years to come. Especially in my reserach fellowship this summer! Here is a link if you're interested [NextGenPop Research Scholars](https://nextgenpop.org)\n\n_Also I would like to note I did attend tutoring on Monday, May 4th with Caroline K to recieve some extra help and get another set of eyes on my blog. We tried to go through feedback I recieved on my graded blogs and organize files. Just wanted to let you know!_\n\nHere is some **bold test** and some *italic text*.\n\n### A bulleted list\n- One thing I’m learning\n  - How to make this blog post\n- Another thing I’m practicing\n  - Using a new coding language\n- One goal I have for this course\n  - To make a blog post that I am truly proud of that I can show off in other disciplines of study.\n\n### A numbered list\n1. Set up my Quarto website\n2. Add my first post\n3. Keep posting each week\n\nHere’s a link to a website I use: [Quarto documentation](https://quarto.org)\n\nHere’s an image:\n\n![](../../profile.jpg)\n\nHere is some inline code: `index.qmd`\n\nAnd here is an R code block:\n\n\n::: {.cell}\n\n```{.r .cell-code}\nx <- 1:5\nmean(x)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 3\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

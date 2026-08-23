@@ -1,0 +1,46 @@
+---
+title: "Post 1: Introductory Post and Reflection"
+author: Mia Harrison
+date: "2026-01-22"
+categories: [Introduction, Quarto, Reflection]
+format: html
+---
+# Welcome to my first post
+
+## A little about this blog
+
+Hi! My name is Mia and I am super excited to be taking this class! I am incredibly fascinated by the intersection of diplomacy and technology, as I see the next wave of global issues and conflict to be driven by byproducts of STEM. I think it is important for peacemakers to be able to accurately communicate with analysts and have some semblance of coding/biology/ecology, as climate change, artificial intelligence, and energy press as major global issues of today. That is why I am taking this course. 
+
+Upon reflection, I have learned SO MUCH in this class. I am so grateful to have had experience in RStudio so that these platforms are not foreign to me. I have already been able to help my peers just simply because I understand that you need to install.packages the first time you use soemthign new! Coding can be really intimidating, and I am glad I took this class and asked the dumb questions. Even though my grade is lower than I would want, I know I will use this information for years to come. Especially in my reserach fellowship this summer! Here is a link if you're interested [NextGenPop Research Scholars](https://nextgenpop.org)
+
+_Also I would like to note I did attend tutoring on Monday, May 4th with Caroline K to recieve some extra help and get another set of eyes on my blog. We tried to go through feedback I recieved on my graded blogs and organize files. Just wanted to let you know!_
+
+Here is some **bold test** and some *italic text*.
+
+### A bulleted list
+- One thing I’m learning
+  - How to make this blog post
+- Another thing I’m practicing
+  - Using a new coding language
+- One goal I have for this course
+  - To make a blog post that I am truly proud of that I can show off in other disciplines of study.
+
+### A numbered list
+1. Set up my Quarto website
+2. Add my first post
+3. Keep posting each week
+
+Here’s a link to a website I use: [Quarto documentation](https://quarto.org)
+
+Here’s an image:
+
+![](../../profile.jpg)
+
+Here is some inline code: `index.qmd`
+
+And here is an R code block:
+
+```{r}
+x <- 1:5
+mean(x)
+```
